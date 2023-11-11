@@ -1,0 +1,188 @@
+<html><head>
+	<title>Frequency Addition</title>
+	<meta http-equiv="Content-Type" content="text/html;charset=UTF-8">
+	<script type="text/javascript">
+		var canvas = [];
+		var ctx = [];
+
+		var statics = []
+		var staticctx = []
+
+		var cHeight = 300;
+		var canvasWidth = 400;
+		var canvasHeight = 300;
+
+		var aCircle = 2 * Math.PI;
+		var ninetyDeg = 0.5 * Math.PI;
+		var sixDeg = Math.PI / 30;
+
+		// vertical scale for 3 sine waves above and below x-axis without hitting edges
+		var vScale = canvasHeight / 6 - 2;
+
+		var freq = [];
+		var color = [];
+		var phase = [];
+		var globalPhase = 0;
+
+		var label = [];
+
+		function init() {
+			color[0] = "red";
+			color[1] = "green";
+			color[2] = "blue";
+			color[3] = "white";
+			label[0] = document.getElementById("label0");
+			label[1] = document.getElementById("label1");
+			label[2] = document.getElementById("label2");
+			canvas[0] = document.getElementById("canvas0");
+			canvas[1] = document.getElementById("canvas1");
+			canvas[2] = document.getElementById("canvas2");
+			canvas[3] = document.getElementById("canvas3");
+			for (i = 0; i < 4; i++) {
+				ctx[i] = canvas[i].getContext("2d");
+				ctx[i].fillStyle = "black";
+				ctx[i].strokeStyle = color[i];
+				ctx[i].lineWidth = 2;
+			}
+			freq[0] = 1;
+			freq[1] = 2;
+			freq[2] = 3;
+			phase[0] = 0;
+			phase[1] = 0;
+			phase[2] = 0;
+			labelWaves();
+			setInterval("animate()", 40);
+		}
+
+		function labelWaves() {
+			for (i = 0; i < 3; i++) {
+				var phaseDeg = parseInt((phase[i] / Math.PI) * 180);
+				document.getElementById('phaseradval'+i).innerHTML= "~" + (Math.round(phaseDeg/180*100)/100).toFixed(2) + 'pi rad'
+				document.getElementById('phaseval'+i).value= phaseDeg
+			}
+		}
+
+		function animate() {
+			if (document.getElementById('animationtoggle').checked) {
+				globalPhase = globalPhase + sixDeg;
+			} else {
+				globalPhase = 0;
+			}
+			drawSinWave(0);
+			drawSinWave(1);
+			drawSinWave(2);
+			drawAllWaves();
+		}
+
+		function drawSinWave(index) {
+			var thisCtx = ctx[index];
+			// clear to black
+			thisCtx.fillRect(0, 0, canvasWidth, cHeight);
+			// draw X axis
+			var xAxis = cHeight / 2;
+			thisCtx.beginPath();
+			thisCtx.moveTo(canvasWidth, xAxis);
+			thisCtx.lineTo(0, xAxis);
+			// plot graph of sine wave
+			var xCoord = 0;
+			var steps = canvasWidth / freq[index];
+			for (i = 0; i < freq[index]; i++) {
+				for (j = 0; j <= steps; j++) {
+					var xCoord = i * steps + j;
+					var radians =
+						(aCircle / steps) * j + phase[index] + globalPhase * freq[index];
+					var sinY = Math.sin(radians);
+					var yCoord = sinY * vScale + xAxis;
+					thisCtx.lineTo(xCoord, yCoord);
+				}
+			}
+			thisCtx.stroke();
+		}
+
+		function drawAllWaves() {
+			var thisCtx = ctx[3];
+			thisCtx.fillRect(0, 0, canvasWidth, canvasHeight);
+			// draw X axis
+			thisCtx.beginPath();
+			var xAxis = canvasHeight / 2;
+			thisCtx.moveTo(canvasWidth, xAxis);
+			thisCtx.lineTo(0, xAxis);
+			// plot graph of all waves added together
+			var xCoord = 0;
+			for (i = 0; i < canvasWidth; i++) {
+				var xCoord = i;
+				var yCoord = 0;
+				for (j = 0; j < 3; j++) {
+					var steps = canvasWidth / freq[j];
+					var radians =
+						(aCircle / steps) * i + phase[j] + globalPhase * freq[j];
+					var sinY = Math.sin(radians);
+					yCoord = yCoord + sinY;
+				}
+				yCoord = yCoord * vScale + xAxis;
+				thisCtx.lineTo(xCoord, yCoord);
+			}
+			thisCtx.stroke();
+		}
+
+		function changeFreq(index) {
+			freq[index]=document.getElementById('freq'+index).value;
+			if (freq[index]<0) {
+				freq[index]=0
+			}
+			drawSinWave(index);
+			labelWaves();
+		}
+
+		function changePhase(index) {
+			var thePhase = document.getElementById('phase'+index).value*(Math.PI/180);
+			phase[index] = thePhase;
+			labelWaves();
+			drawSinWave(index);
+		}
+
+		function changePhaseWithInput(index) {
+			var thePhase = document.getElementById('phaseval'+index).value*(Math.PI/180);
+			phase[index] = thePhase;
+			labelWaves();
+			drawSinWave(index);
+		}
+	</script>
+
+	<style>
+		input {
+			display: inline;
+		}
+	</style>
+</head>
+
+<body onload="init()">
+	<p></p>
+
+	<h1>Frequency Addition Demo</h1>
+
+	<input type="checkbox" id="animationtoggle"> Animate waveforms
+
+
+	<table>
+		<tr>
+			<td>Frequency:<input type="number" min="0" id="freq0" value="1" onclick="changeFreq(0)"><br>
+				Phase: 0<input type="range" min="0" max="360" value="0" step="1" id="phase0" oninput="changePhase(0)" onchange="changePhase(0)">2pi | Value: <input type="number" value="0" min="0" max="360" onchange="changePhaseWithInput(0)" id="phaseval0"> or <span id="phaseradval0"></span></td>
+			<td><canvas id="canvas0" width="400" height="300"> test </canvas></td>
+			<td rowspan="3">Addition of waves 1, 2, and 3:<br>
+				<canvas id="canvas3" width="400" height="300"> </canvas></td>
+		</tr>
+		<tr>
+			<td>Frequency:<input type="number" min="0" id="freq1" value="2" onclick="changeFreq(1)"><br>
+				Phase: 0<input type="range" min="0" max="360" value="0" step="1" id="phase1" oninput="changePhase(1)" onchange="changePhase(1)">2pi | Value: <input type="number" value="0" min="0" max="360" onchange="changePhaseWithInput(1)" id="phaseval1"> or <span id="phaseradval1"></span></td>
+			<td><canvas id="canvas1" width="400" height="300"> test </canvas></td>
+		</tr>
+		<tr>
+			<td>Frequency:<input type="number" min="0" id="freq2" value="3" onclick="changeFreq(2)"><br>
+				Phase: 0<input type="range" min="0" max="360" value="0" step="1" id="phase2" oninput="changePhase(2)" onchange="changePhase(2)">2pi | Value: <input type="number" value="0" min="0" max="360" onchange="changePhaseWithInput(2)" id="phaseval2"> or <span id="phaseradval2"></span></td>
+			<td><canvas id="canvas2" width="400" height="300"> test </canvas></td>
+		</tr>
+	</table>
+
+
+</body></html>
